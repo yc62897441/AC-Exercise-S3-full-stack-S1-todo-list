@@ -28,40 +28,53 @@ router.post('/register', (req, res) => {
   // const name = req.body.name
   // const email = req.body.email
 
+  const errors = []
+  if (!name || !email || !password || !confirmPassword) {
+    errors.push({ message: '所有欄位都是必填。' })
+  }
+  if (password !== confirmPassword) {
+    errors.push({ message: '密碼與確認密碼不相符！' })
+  }
+  if (errors.length) {
+    return res.render('register', { name, email, password, confirmPassword, errors })
+  }
+
   // User.findOne({ name: 'jason', password: '123' }) 就算有多筆資料符合條件(即使有 n 個 jason 並且密碼都是 123，也只會回傳一筆資料)，需要多筆資料可用 .find()
   User.findOne({ email })
     .then(user => {
       if (user) {
-        console.log('User already existed.')
-        res.render('register', { name, email, password, confirmPassword })
-      } else {
-        // 第一種寫法 (另外，有沒有放 return，好像都沒有影響)
-        return User.create({
-          name: name,
-          email: email,
-          password: password
-        }).then(() => {
-          res.redirect('/')
-        })
-          .catch(error => console.log(error))
-
-        // 第二種寫法
-        // const newUser = new User({
-        //   name: name,
-        //   email: email,
-        //   password: password
-        // })
-        // newUser.save()
-        //   .then(() => {
-        //     res.redirect('/')
-        //   })
-        //   .catch(error => console.log(error))
+        errors.push({ message: '這個 Email 已經註冊過了。' })
+        return res.render('register', { name, email, password, confirmPassword, errors })
       }
+
+      // 第一種寫法 (另外，有沒有放 return，好像都沒有影響)
+      return User.create({
+        name: name,
+        email: email,
+        password: password
+      }).then(() => {
+        res.redirect('/')
+      })
+        .catch(error => console.log(error))
+
+      // 第二種寫法
+      // const newUser = new User({
+      //   name: name,
+      //   email: email,
+      //   password: password
+      // })
+      // newUser.save()
+      //   .then(() => {
+      //     res.redirect('/')
+      //   })
+      //   .catch(error => console.log(error))
     })
 })
 
+// 登出
 router.get('/logout', (req, res) => {
   req.logout()
+  req.flash('success_msg', '你已經成功登出。')
   res.redirect('/users/login')
 })
 
